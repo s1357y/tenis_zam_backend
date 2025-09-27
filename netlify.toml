@@ -38,7 +38,7 @@
 # Functions 타임아웃 설정
 [functions]
   # 최대 실행 시간 (10초)
-  timeout = 10
+  # timeout = 10
 
 # 개발 설정
 [dev]
