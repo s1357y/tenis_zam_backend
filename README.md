@@ -1,174 +1,214 @@
 # Tennis Zam Backend
 
-잠중 테니스 캘린더 플랫폼의 백엔드 서버입니다.
+테니스 일정 관리 플랫폼의 백엔드 API 서버입니다.
 
-## 🚀 기능
+## 🚀 주요 기능
 
-### 인증 시스템
-- 이름과 전화번호를 통한 회원가입
-- 전화번호 기반 로그인
-- JWT 토큰 기반 인증
-- 자동 승인 기능 (환경 변수로 제어)
-- 첫 번째 사용자는 자동으로 관리자 권한 부여
+- **사용자 인증**: JWT 기반 인증 시스템
+- **일정 관리**: 테니스 일정 생성, 수정, 삭제
+- **사용자 관리**: 사용자 프로필 및 권한 관리
+- **보안**: Rate limiting, CORS, Helmet 보안 미들웨어
+- **로깅**: 구조화된 로깅 시스템
 
-### 일정 관리
-- 일정 생성, 조회, 수정, 삭제
-- 날짜, 시간, 장소, 내용 포함
-- 월별/년별 일정 필터링
-- 참여자 수 및 확정 참여자 수 표시
+## 🛠 기술 스택
 
-### 참여 관리
-- 개인별 참여 상태 설정 (참여/불참/미정)
-- 관리자의 다른 사용자 참여 상태 관리
-- 내 참여 일정 조회
+- **Node.js**: JavaScript 런타임
+- **Express.js**: 웹 프레임워크
+- **MySQL**: 데이터베이스
+- **JWT**: 인증 토큰
+- **bcryptjs**: 비밀번호 해싱
+- **PM2**: 프로세스 관리
+- **Netlify Functions**: 서버리스 배포
 
-### 관리자 기능
-- 사용자 승인/승인 취소
-- 사용자 삭제
-- 모든 일정 관리 권한
-- 다른 사용자 참여 상태 관리
+## 📦 설치 및 실행
 
-## 📋 사전 요구사항
+### 로컬 개발 환경
 
-- Node.js 16 이상
-- MySQL 8.0 이상
-- npm 또는 yarn
-
-## 🛠 설치 및 실행
-
-### 1. 의존성 설치
 ```bash
+# 의존성 설치
 npm install
-```
 
-### 2. 환경 변수 설정
-`.env.example` 파일을 복사하여 `.env` 파일을 생성하고 설정값을 입력하세요.
+# 환경 변수 설정
+cp env.example .env
+# .env 파일을 편집하여 실제 값으로 변경
 
-```bash
-cp .env.example .env
-```
-
-### 3. MySQL 데이터베이스 생성
-```sql
-CREATE DATABASE tenis_zam CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-### 4. 서버 실행
-```bash
-# 개발 모드
+# 개발 서버 실행
 npm run dev
-
-# 프로덕션 모드
-npm start
 ```
 
-서버는 기본적으로 포트 3001에서 실행됩니다.
+### PM2를 사용한 프로덕션 실행
 
-## 📊 데이터베이스 스키마
+```bash
+# PM2로 프로덕션 실행
+npm run pm2:prod
 
-### users 테이블
-```sql
-CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  phone VARCHAR(20) NOT NULL UNIQUE,
-  is_approved BOOLEAN DEFAULT FALSE,
-  is_admin BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+# PM2 상태 확인
+npm run pm2:status
+
+# PM2 로그 확인
+npm run pm2:logs
 ```
 
-### schedules 테이블
-```sql
-CREATE TABLE schedules (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(200) NOT NULL,
-  description TEXT,
-  date DATE NOT NULL,
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  location VARCHAR(500),
-  location_detail TEXT,
-  created_by INT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id)
-);
+### Netlify Functions로 배포
+
+```bash
+# Netlify CLI 설치 (전역)
+npm install -g netlify-cli
+
+# 로컬에서 Netlify Functions 테스트
+npm run netlify:dev
+
+# Netlify에 배포
+npm run netlify:deploy
 ```
-
-### schedule_participants 테이블
-```sql
-CREATE TABLE schedule_participants (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  schedule_id INT NOT NULL,
-  user_id INT NOT NULL,
-  status ENUM('참여', '불참', '미정') DEFAULT '미정',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_participation (schedule_id, user_id),
-  FOREIGN KEY (schedule_id) REFERENCES schedules(id),
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-
-## 🌐 API 엔드포인트
-
-### 인증 (Auth)
-- `POST /api/auth/register` - 회원가입
-- `POST /api/auth/login` - 로그인
-- `GET /api/auth/me` - 내 정보 조회
-
-### 사용자 관리 (Users) - 관리자 전용
-- `GET /api/users` - 모든 사용자 조회
-- `GET /api/users/pending` - 승인 대기 사용자 조회
-- `PATCH /api/users/:userId/approve` - 사용자 승인
-- `PATCH /api/users/:userId/revoke` - 승인 취소
-- `DELETE /api/users/:userId` - 사용자 삭제
-
-### 일정 관리 (Schedules)
-- `GET /api/schedules` - 일정 목록 조회
-- `GET /api/schedules/:scheduleId` - 일정 상세 조회
-- `POST /api/schedules` - 일정 생성
-- `PUT /api/schedules/:scheduleId` - 일정 수정
-- `DELETE /api/schedules/:scheduleId` - 일정 삭제
-
-### 참여 관리
-- `POST /api/schedules/:scheduleId/participate` - 내 참여 상태 설정
-- `POST /api/schedules/:scheduleId/participate/:userId` - 다른 사용자 참여 상태 설정 (관리자)
-- `GET /api/schedules/my-participations` - 내 참여 일정 조회
 
 ## 🔧 환경 변수
 
-| 변수명 | 설명 | 기본값 |
-|--------|------|--------|
-| PORT | 서버 포트 | 3001 |
-| NODE_ENV | 실행 환경 | development |
-| DB_HOST | MySQL 호스트 | localhost |
-| DB_PORT | MySQL 포트 | 3306 |
-| DB_NAME | 데이터베이스 이름 | tenis_zam |
-| DB_USER | MySQL 사용자 | root |
-| DB_PASSWORD | MySQL 비밀번호 | |
-| JWT_SECRET | JWT 시크릿 키 | |
-| JWT_EXPIRES_IN | JWT 만료 시간 | 7d |
-| FRONTEND_URL | 프론트엔드 URL | http://localhost:3000 |
-| AUTO_APPROVE_USERS | 자동 승인 여부 | true |
+필수 환경 변수들을 `env.example` 파일을 참고하여 설정하세요:
 
-## 📝 주요 특징
+```bash
+# 데이터베이스 설정
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_NAME=tenis_zam
 
-1. **자동 승인 시스템**: `AUTO_APPROVE_USERS` 환경변수로 제어
-2. **첫 번째 사용자**: 자동으로 관리자 권한 부여
-3. **보안**: Helmet, Rate Limiting, CORS 적용
-4. **입력 검증**: express-validator를 통한 데이터 검증
-5. **에러 처리**: 글로벌 에러 핸들링
-6. **데이터베이스**: 자동 테이블 생성 및 연결 관리
+# JWT 설정
+JWT_SECRET=your_super_secret_jwt_key_here
+JWT_EXPIRES_IN=7d
+
+# 서버 설정
+PORT=3001
+NODE_ENV=production
+FRONTEND_URL=https://your-frontend-domain.netlify.app
+```
+
+## 📚 API 문서
+
+### 인증 API
+
+- `POST /api/auth/register` - 사용자 회원가입
+- `POST /api/auth/login` - 사용자 로그인
+- `POST /api/auth/logout` - 사용자 로그아웃
+- `GET /api/auth/me` - 현재 사용자 정보 조회
+
+### 일정 API
+
+- `GET /api/schedules` - 일정 목록 조회
+- `POST /api/schedules` - 새 일정 생성
+- `GET /api/schedules/:id` - 특정 일정 조회
+- `PUT /api/schedules/:id` - 일정 수정
+- `DELETE /api/schedules/:id` - 일정 삭제
+
+### 사용자 API
+
+- `GET /api/users` - 사용자 목록 조회 (관리자)
+- `GET /api/users/:id` - 특정 사용자 조회
+- `PUT /api/users/:id` - 사용자 정보 수정
+- `DELETE /api/users/:id` - 사용자 삭제 (관리자)
+
+## 🏗 프로젝트 구조
+
+```
+tenis_zam_backend/
+├── src/
+│   ├── config/
+│   │   └── database.js          # 데이터베이스 설정
+│   ├── controllers/             # 컨트롤러
+│   ├── middleware/
+│   │   ├── auth.js              # 인증 미들웨어
+│   │   └── errorHandler.js      # 에러 핸들러
+│   ├── models/                  # 데이터 모델
+│   ├── routes/
+│   │   ├── auth.js              # 인증 라우트
+│   │   ├── schedules.js         # 일정 라우트
+│   │   └── users.js             # 사용자 라우트
+│   ├── utils/                   # 유틸리티 함수
+│   └── server.js                # 메인 서버 파일
+├── netlify/
+│   └── functions/
+│       └── server.js            # Netlify Functions 핸들러
+├── logs/                        # 로그 파일
+├── ecosystem.config.js          # PM2 설정
+├── netlify.toml                 # Netlify 설정
+├── package.json
+└── README.md
+```
+
+## 🚀 배포
+
+### PM2 배포
+
+```bash
+# 프로덕션 환경으로 PM2 시작
+npm run pm2:prod
+
+# PM2 모니터링
+npm run pm2:monit
+```
+
+### Netlify Functions 배포
+
+자세한 배포 가이드는 [NETLIFY_DEPLOYMENT_GUIDE.md](./NETLIFY_DEPLOYMENT_GUIDE.md)를 참고하세요.
 
 ## 🧪 테스트
 
 ```bash
+# 테스트 실행
 npm test
+
+# 테스트 커버리지 확인
+npm run test:coverage
 ```
+
+## 📊 모니터링
+
+### 로그 확인
+
+```bash
+# PM2 로그 확인
+npm run pm2:logs
+
+# 실시간 로그 모니터링
+npm run pm2:monit
+```
+
+### 헬스체크
+
+```bash
+# 서버 상태 확인
+curl http://localhost:3001/health
+```
+
+## 🔒 보안
+
+- **Rate Limiting**: API 요청 제한
+- **CORS**: Cross-Origin 요청 제어
+- **Helmet**: 보안 헤더 설정
+- **JWT**: 안전한 인증 토큰
+- **bcryptjs**: 비밀번호 해싱
+
+## 🤝 기여하기
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📄 라이선스
 
-MIT License
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 `LICENSE` 파일을 참고하세요.
+
+## 📞 지원
+
+문제가 발생하면 다음을 확인하세요:
+
+1. [Issues](https://github.com/your-username/tenis-zam-backend/issues)에서 기존 이슈 확인
+2. 새로운 이슈 생성
+3. [NETLIFY_DEPLOYMENT_GUIDE.md](./NETLIFY_DEPLOYMENT_GUIDE.md) 참고
+
+---
+
+**Tennis Zam Team** - 테니스 일정 관리 플랫폼
