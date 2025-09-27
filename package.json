@@ -1,0 +1,49 @@
+{
+  "name": "tenis_zam_backend",
+  "version": "1.0.0",
+  "description": "Tennis Calendar Platform Backend",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop tenis-zam-backend",
+    "pm2:restart": "pm2 restart tenis-zam-backend",
+    "pm2:reload": "pm2 reload tenis-zam-backend",
+    "pm2:delete": "pm2 delete tenis-zam-backend",
+    "pm2:logs": "pm2 logs tenis-zam-backend",
+    "pm2:monit": "pm2 monit",
+    "pm2:status": "pm2 status",
+    "pm2:prod": "pm2 start ecosystem.config.js --env production",
+    "pm2:dev": "pm2 start ecosystem.config.js --env development"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.3",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "joi": "^17.11.0",
+    "express-validator": "^7.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "pm2": "^5.3.0"
+  },
+  "keywords": [
+    "tennis",
+    "calendar",
+    "platform",
+    "nodejs",
+    "express",
+    "mysql"
+  ],
+  "author": "Tennis Zam Team",
+  "license": "MIT"
+}
